@@ -1,5 +1,6 @@
 #pragma once
 #include "Arduino.h"
+#include <SPI.h>
 
 // C11740 Hamamatsu Signale 
 #define C11740_RR 2     // Detects system error               [OUTPUT]
@@ -18,21 +19,42 @@
 #define DEFECT A3      // Set measerment-result to defect     [INPUT]
 // analog Signal 
 #define C11740_SIG A6  // detction unit analog signal output  [ANALOG_OUTPUT]
+// analog Refence Signal
+#define C11740_POT_CS 10 //Chip Select Poti Low active             []
+#define C11740_POT_RST A0 //Reste Poti      Low active             []
 
+#define MAX_CYCLE 600
 class Sensor_C11740
 {
 public:
 	Sensor_C11740();
 	void Begin();
-	bool DoMessung();
-	void Test_InPut_Signal();
+	bool GoMessung();
+	bool isMessung(unsigned long STime);
+	bool isDebugMessung(unsigned long STime);
+	bool isKurveMessung(unsigned long STime);
+	void StopMessung();
+	void Test_Input_Signal();
+	void Test_Output_Signal(const char* Txt);
+	void Test_Sensor_();
 	void Show_SIG_Wert();
-	void Show_HoleSize();
+	void Send_HoleSize();
+	void Send_HoleSizeDebug();
 	void Show_Error();
+	void digitalPotWrite(byte value);
 protected:
 	void Show_Signal(const char *Txt, bool *B, unsigned int Pin);
-	unsigned long HoleSize;
-	word AnalogVal;
+	unsigned long SumHoleSize;
+	unsigned int HoleSize;
+	unsigned int Sampels;
+	unsigned long Start_time; 
+	unsigned long Gate_time;
+	unsigned long End_time;
+
+	word AnalogVal;  // Messwert vom Sensor SIG
+	byte AnalogSet; //  ComperatorWert C.Ref
+	bool Active_Messung;
+	bool Messung;
 	bool Bit_RR;
 	bool Bit_SO;
 	bool Bit_OR;
