@@ -47,6 +47,44 @@ bool Sensor_C11740::GoMessung()
 	digitalWrite(READY, HIGH);
 }
 
+void Sensor_C11740::SchalteHPower(bool Bit)
+{
+	digitalWrite(C11740_GATE, Bit); // Hoch spannung einshalten
+	if (Bit) delay(400);
+}
+
+bool Sensor_C11740::DoKurve()
+{
+	static bool Start = true;
+
+	if (Start)
+	{
+		Start_time = millis();
+		Start = false;
+		Sampels = 0;
+	}
+	AnalogVal = analogRead(C11740_SIG);
+	if (get_input(CLOCK))      AnalogVal += 0x1000;
+	if (get_input(OBJECT))     AnalogVal += 0x2000;
+	if (get_input(C11740_PIN)) AnalogVal += 0x4000;
+	if (get_input(C11740_SO))  AnalogVal += 0x8000;
+
+	Serial.write(lowByte(AnalogVal));
+	Serial.write(highByte(AnalogVal));
+	Serial.write('\n');
+	Sampels++;
+	if (Sampels == 3000)
+	{
+		End_time = millis();
+		Start = true;
+		Serial.print(">_EndeL:");
+		Serial.print(End_time - Start_time);
+		Serial.print(" ms \n");
+		return false;
+	}
+	return true;
+}
+
 void Sensor_C11740::StopMessung()
 {
 	digitalWrite(C11740_SENS, LOW);
@@ -110,7 +148,7 @@ bool Sensor_C11740::isDebugMessung(unsigned long STime)
 	return true;
 }
 
-bool Sensor_C11740::isKurveMessung(unsigned long STime)
+bool Sensor_C11740::isKurveMessung(int N)
 {
 	static bool Bit_Cyclus = false;
 	static int Wert;
@@ -119,14 +157,16 @@ bool Sensor_C11740::isKurveMessung(unsigned long STime)
 		End_time = millis();
 		Active_Messung = LOW;
 		Bit_Cyclus = false;
-		Serial.print(">_Ende :");
-		Serial.print(End_time - Start_time);
-		Serial.print(" ms \n");
+		if (N == 0)
+		{
+			Serial.print(">_EndeM:");
+			Serial.print(End_time - Start_time);
+			Serial.print(" ms \n");
+		}
 		return false;
 	}
 	if (Active_Messung == LOW && get_input(OBJECT))
 	{
-		digitalWrite(C11740_GATE, HIGH); // Hoch spannung einshalten
 		Start_time = millis();
 		digitalWrite(DEFECT, LOW);
 		Active_Messung = HIGH;
@@ -137,22 +177,27 @@ bool Sensor_C11740::isKurveMessung(unsigned long STime)
 	if (Active_Messung)
 	{
 		AnalogVal = analogRead(C11740_SIG);
-		AnalogVal = AnalogVal >> 1;
-		//SumHoleSize += AnalogVal;
-		Wert = 0;
-		if (get_input(CLOCK))      Wert = 0x01;
-		if (get_input(OBJECT))     Wert += 0x02;
-		if (get_input(C11740_PIN)) Wert +=0x04;
-		if (get_input(C11740_OR))  Wert +=0x08;
-		Serial.print(Wert,HEX);
-		Serial.print(AnalogVal);
-		Serial.print('\n');
-		Sampels++;
+		if (get_input(CLOCK))      AnalogVal += 0x1000;
+		if (get_input(OBJECT))     AnalogVal += 0x2000;
+		if (get_input(C11740_PIN)) AnalogVal += 0x4000;
+		if (get_input(C11740_SO))  AnalogVal += 0x8000;
+		
+	
+		if (N == 0)
+		{
+		    Serial.write(lowByte(AnalogVal));
+			Serial.write(highByte(AnalogVal));
+			Serial.write('\n');
+		}
 	}
 	if (Active_Messung && get_input(OBJECT) == LOW)
 	{
-		digitalWrite(C11740_GATE, LOW);
-		Bit_Cyclus = true;
+		//digitalWrite(C11740_GATE, LOW);
+
+		if ((get_input(CLOCK) == LOW))
+		{
+			Bit_Cyclus = true;
+		}
 	}
 	return true;
 

@@ -30,9 +30,12 @@ public:
 	Sensor_C11740();
 	void Begin();
 	bool GoMessung();
+	void SchalteHPower(bool Bit);
 	bool isMessung(unsigned long STime);
 	bool isDebugMessung(unsigned long STime);
-	bool isKurveMessung(unsigned long STime);
+	bool isKurveMessung(int N);
+
+	bool DoKurve();
 	void StopMessung();
 	void Test_Input_Signal();
 	void Test_Output_Signal(const char* Txt);

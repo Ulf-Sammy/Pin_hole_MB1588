@@ -24,9 +24,8 @@ void setup()
 
 	
 	Serial.begin(115200);
-	Serial.println(">_ start Pin Hole V1.05");
+	Serial.println(">_ start Pin Hole V1.09");
 	Serial.println(">_ ");
-
 }
 
 
@@ -37,7 +36,6 @@ void loop()
 	{
 	case TesteInput:
 		Sensor.Test_Input_Signal();
-		//Status = Warten;
 		break;
 	case TesteOutput:
 		Sensor.Test_Output_Signal(buffer);
@@ -55,6 +53,7 @@ void loop()
 		if (strcmp(buffer, "_DB_0") == 0)	Sensor.Show_SIG_Wert();
 		if (strcmp(buffer, "_DB_1") == 0)	LoopKurveMessung();
 		if (strcmp(buffer, "_DB_2") == 0)	LoopDebugMessung();
+		if (strcmp(buffer, "_DB_3") == 0)	LoopDebugKurve();
 		Status = Warten;
 		break;
 	case Warten:
@@ -76,7 +75,6 @@ void LoopMessung()
 	} while (Status == Messen);
 	Sensor.StopMessung();
 }
-
 void LoopDebugMessung()
 {
 	Sensor.GoMessung();
@@ -86,15 +84,32 @@ void LoopDebugMessung()
 	Sensor.Send_HoleSizeDebug();
 	Sensor.StopMessung();
 }
-
 void LoopKurveMessung()
 {
+	int Anzahl = 3;
 	Sensor.GoMessung();
+	Sensor.SchalteHPower(HIGH);
 	unsigned long T = millis();
-	while (Sensor.isKurveMessung(T))
+	do
 	{
-	}
+		Anzahl--;
+		while (Sensor.isKurveMessung(Anzahl))
+		{
+		}
+		
+	} while (Anzahl != 0);
+
 	Sensor.StopMessung();
+	Sensor.SchalteHPower(LOW);
+}
+void LoopDebugKurve()
+{
+	Sensor.GoMessung();
+	Sensor.SchalteHPower(HIGH);
+	while (Sensor.DoKurve())
+	{		}
+	Sensor.StopMessung();
+	Sensor.SchalteHPower(LOW);
 }
 
 void checkSerial()
